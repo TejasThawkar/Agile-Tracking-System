@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
+import UserContext from "../../context/UserContext"; // Import UserContext
 
 const UserProfiles = () => {
+  const { user } = useContext(UserContext); // Get logged-in user details
   const [users, setUsers] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
@@ -9,6 +11,7 @@ const UserProfiles = () => {
     password: "",
     role: "Employee",
   });
+  const [error, setError] = useState("");
   const [tasks, setTasks] = useState({});
   const [loadingTasks, setLoadingTasks] = useState(null);
 
@@ -20,11 +23,33 @@ const UserProfiles = () => {
       .catch((error) => console.error("Error fetching users:", error));
   }, []);
 
+  const validateForm = () => {
+    if (!formData.name.trim()) {
+      setError("Name is required.");
+      return false;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError("Please enter a valid email address.");
+      return false;
+    }
+    if (formData.password.length < 6) {
+      setError("Password must be at least 6 characters long.");
+      return false;
+    }
+    return true;
+  };
+
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    setError(""); // Clear previous errors when user starts typing
   };
 
   const handleCreateUser = () => {
+    setError(""); // Clear previous errors
+
+    if (!validateForm()) return;
+
     fetch("http://localhost:8080/users", {
       method: "POST",
       headers: {
@@ -43,10 +68,13 @@ const UserProfiles = () => {
 
   const handleGetHistory = (userId) => {
     setLoadingTasks(userId);
-    fetch(`http://localhost:8080/tasks?userId=${userId}`)
+    fetch("http://localhost:8080/tasks")
       .then((res) => res.json())
       .then((data) => {
-        setTasks({ ...tasks, [userId]: data });
+        const userTasks = data.filter(
+          (task) => task.assignedTo === userId || task.assignedUserId === userId
+        );
+        setTasks((prevTasks) => ({ ...prevTasks, [userId]: userTasks }));
         setLoadingTasks(null);
       })
       .catch((error) => {
@@ -58,25 +86,42 @@ const UserProfiles = () => {
   return (
     <div>
       <h2>User Profiles</h2>
-      {!showForm && <button onClick={() => setShowForm(true)}>Add New User</button>}
+      {user?.role === "admin" && !showForm && (
+        <button onClick={() => setShowForm(true)}>Add New User</button>
+      )}
 
-      {showForm && (
+      {showForm && user?.role === "admin" && (
         <div>
           <button onClick={() => setShowForm(false)}>Cancel</button>
           <br />
+          {error && <p style={{ color: "red" }}>{error}</p>}
           <label>Name:</label>
-          <input type="text" name="name" value={formData.name} onChange={handleInputChange} />
+          <input
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={handleInputChange}
+          />
           <br />
           <label>Email:</label>
-          <input type="email" name="email" value={formData.email} onChange={handleInputChange} />
+          <input
+            type="email"
+            name="email"
+            value={formData.email}
+            onChange={handleInputChange}
+          />
           <br />
           <label>Password:</label>
-          <input type="password" name="password" value={formData.password} onChange={handleInputChange} />
+          <input
+            type="password"
+            name="password"
+            value={formData.password}
+            onChange={handleInputChange}
+          />
           <br />
           <label>Role:</label>
           <select name="role" value={formData.role} onChange={handleInputChange}>
             <option value="Employee">Employee</option>
-            <option value="Manager">Manager</option>
             <option value="Admin">Admin</option>
           </select>
           <br />
@@ -93,20 +138,25 @@ const UserProfiles = () => {
             <button onClick={() => handleGetHistory(user.id)}>
               {loadingTasks === user.id ? "Loading..." : "Get History"}
             </button>
-
-            {/* Show tasks if available */}
-           
-           
             {tasks[user.id] && (
-                
               <ul>
-                 <h3>Tasks Worked By {user.name}</h3>
+                <h3>Tasks Worked By {user.name}</h3>
                 {tasks[user.id].length > 0 ? (
                   tasks[user.id].map((task) => (
                     <li key={task.id}>
                       <strong>Title:</strong> {task.title} <br />
                       <strong>Description:</strong> {task.description} <br />
                       <strong>Status:</strong> {task.status} <br />
+                      {task.history && task.history.length > 0 && (
+                        <ul>
+                          <h4>Task History</h4>
+                          {task.history.map((h, index) => (
+                            <li key={index}>
+                              <strong>Status:</strong> {h.status}, <strong>Date:</strong> {h.date}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </li>
                   ))
                 ) : (

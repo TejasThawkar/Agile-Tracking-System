@@ -1,38 +1,33 @@
-import React, { useState, useEffect } from "react";
+import React, { useContext } from "react";
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from "react-router-dom";
 import Dashboard from "./components/Dashboard/Dashboard";
 import Login from "./components/Login/Login";
 import Signup from "./components/Signup/Signup";
-import UserProfile from "./components/UserProfile/UserProfile"; // Updated import
+import UserProfile from "./components/UserProfile/UserProfile";
+import UserContext from "./context/UserContext";
 
 const App = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  useEffect(() => {
-    // Check if user is already logged in when the app loads
-    const user = localStorage.getItem("user");
-    setIsAuthenticated(!!user); // Convert to boolean
-  }, []);
+  const { user } = useContext(UserContext); // Get user from context
 
   return (
     <Router>
-      <Nav isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} />
+      <Nav />
       <Routes>
         <Route path="/" element={<Dashboard />} />
-        <Route path="/login" element={<Login setIsAuthenticated={setIsAuthenticated} />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
-        <Route path="/profiles" element={<UserProfile userId={2} />} /> {/* Updated route */}
+        <Route path="/profiles" element={user ? <UserProfile userId={user.id} /> : <Login />} />
       </Routes>
     </Router>
   );
 };
 
-const Nav = ({ isAuthenticated, setIsAuthenticated }) => {
+const Nav = () => {
+  const { user, logout } = useContext(UserContext);
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    localStorage.removeItem("user"); // Remove user from storage
-    setIsAuthenticated(false); // Update state
+    logout(); // Use logout function from UserContext
     navigate("/login"); // Redirect to login
   };
 
@@ -40,14 +35,13 @@ const Nav = ({ isAuthenticated, setIsAuthenticated }) => {
     <nav>
       <ul>
         <li><Link to="/">Dashboard</Link></li>
-        {isAuthenticated ? (
+        {user ? (
           <>
-            <li><Link to="/profiles">Profiles</Link></li> {/* Updated link */}
+            <li><Link to="/profiles">Profile</Link></li>
             <li><button onClick={handleLogout}>Logout</button></li>
           </>
         ) : (
           <li><Link to="/login">Login</Link></li>
-          
         )}
       </ul>
     </nav>
