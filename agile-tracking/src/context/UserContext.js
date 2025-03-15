@@ -6,6 +6,7 @@ const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [role, setRole] = useState("user"); 
 
   // Load user from localStorage on mount
   useEffect(() => {
@@ -28,7 +29,7 @@ export const UserProvider = ({ children }) => {
   };
 
   return (
-    <UserContext.Provider value={{ user, login, logout }}>
+    <UserContext.Provider value={{ user, login, logout ,role,setRole}}>
       {children}
     </UserContext.Provider>
   );

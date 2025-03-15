@@ -1,21 +1,25 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
+import UserContext from "../../context/UserContext";
 
 const ScrumDetails = () => {
+    const { user } = useContext(UserContext); // Get logged-in user
+    const isAdmin = user?.role === "admin"; // Check if user is admin
+
     const [scrums, setScrums] = useState([]);
     const [selectedScrum, setSelectedScrum] = useState(null);
     const [tasks, setTasks] = useState([]);
-    const [users, setUsers] = useState([]);
     const [showForm, setShowForm] = useState(false);
-
+    const [users, setUsers] = useState([]);
     const [newScrum, setNewScrum] = useState({
         name: "",
         taskTitle: "",
         taskDescription: "",
         taskStatus: "To Do",
         assignedUserId: "",
+
     });
 
-    useEffect(() => {
+     useEffect(() => {
         fetch("http://localhost:8080/scrums")
             .then((res) => res.json())
             .then((data) => setScrums(data))
@@ -81,11 +85,14 @@ const ScrumDetails = () => {
     return (
         <div>
             <h2>Scrum Teams</h2>
-            <button onClick={() => setShowForm(!showForm)}>
-                {showForm ? "Cancel" : "Add New Scrum"}
-            </button>
 
-            {showForm && (
+            {isAdmin && (
+                <>
+                    <button onClick={() => setShowForm(!showForm)}>
+                        {showForm ? "Cancel" : "Add New Scrum"}
+                    </button>
+
+                    {showForm && (
                 <form onSubmit={handleAddScrum}>
                     <label>Scrum Name</label>
                     <input
@@ -139,11 +146,14 @@ const ScrumDetails = () => {
                     <button type="submit">Create Scrum</button>
                 </form>
             )}
+                    
+                </>
+            )}
 
             <ul>
                 {scrums.map((scrum) => (
                     <li key={scrum.id}>
-                        {scrum.name}{" "}
+                        {scrum.name}
                         <button onClick={() => handleGetDetails(scrum)}>Get Details</button>
                     </li>
                 ))}
@@ -156,11 +166,10 @@ const ScrumDetails = () => {
                     <h3>Tasks</h3>
                     <ul>
                         {tasks.length > 0 ? (
-                            tasks.map((task) => {
-                                // const assignedUser = users.find(user => user.id === task.assignedTo);
-                                return (
-                                    <li key={task.id}>
-                                        <strong>{task.title}:</strong> {task.description} -{" "}
+                            tasks.map((task) => (
+                                <li key={task.id}>
+                                    <strong>{task.title}:</strong> {task.description} -{" "}
+                                    {isAdmin ? (
                                         <select
                                             value={task.status}
                                             onChange={(e) =>
@@ -174,16 +183,16 @@ const ScrumDetails = () => {
                                             <option value="To Do">To Do</option>
                                             <option value="In Progress">In Progress</option>
                                             <option value="Done">Done</option>
-                                        </select>{" "}
-                                        
-                                    </li>
-                                );
-                            })
+                                        </select>
+                                    ) : (
+                                        <strong>{task.status}</strong>
+                                    )}
+                                </li>
+                            ))
                         ) : (
                             <li>No tasks found</li>
                         )}
                     </ul>
-
                     <h3>Users</h3>
                     <ul>
     {users.length > 0 ? (
