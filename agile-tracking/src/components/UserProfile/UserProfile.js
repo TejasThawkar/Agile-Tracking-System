@@ -11,7 +11,7 @@ const UserProfiles = () => {
     password: "",
     role: "Employee",
   });
-  const [error, setError] = useState("");
+  // const [ setError] = useState("");
   const [tasks, setTasks] = useState({});
   const [loadingTasks, setLoadingTasks] = useState(null);
 
@@ -19,34 +19,52 @@ const UserProfiles = () => {
     // Fetch all users
     fetch("http://localhost:8080/users")
       .then((res) => res.json())
-      .then((data) => setUsers(data))
+      .then((data) => {
+        // Only show logged-in employee details unless user is an admin
+        if (user?.role === "admin") {
+          setUsers(data);
+        } else {
+          const filteredUsers = data.filter((u) => u.email === user?.email);
+          setUsers(filteredUsers);
+        }
+      })
       .catch((error) => console.error("Error fetching users:", error));
-  }, []);
+  }, );
+  
+
+  const [validationErrors, setValidationErrors] = useState({});
 
   const validateForm = () => {
+    const errors = {};
+  
     if (!formData.name.trim()) {
-      setError("Name is required.");
-      return false;
+      errors.name = "Name is required.";
     }
+  
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-      setError("Please enter a valid email address.");
-      return false;
+      errors.email = "Please enter a valid email address.";
     }
+  
     if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters long.");
-      return false;
+      errors.password = "Password must be at least 6 characters long.";
     }
-    return true;
+  
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0; // Return true if no errors
   };
+  
 
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-    setError(""); // Clear previous errors when user starts typing
+    
+    // Remove error message for this field as user types
+    setValidationErrors({ ...validationErrors, [e.target.name]: "" });
   };
+  
 
   const handleCreateUser = () => {
-    setError(""); // Clear previous errors
+    // setError(""); // Clear previous errors
 
     if (!validateForm()) return;
 
@@ -90,44 +108,52 @@ const UserProfiles = () => {
         <button onClick={() => setShowForm(true)}>Add New User</button>
       )}
 
-      {showForm && user?.role === "admin" && (
-        <div>
-          <button onClick={() => setShowForm(false)}>Cancel</button>
-          <br />
-          {error && <p style={{ color: "red" }}>{error}</p>}
-          <label>Name:</label>
-          <input
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleInputChange}
-          />
-          <br />
-          <label>Email:</label>
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleInputChange}
-          />
-          <br />
-          <label>Password:</label>
-          <input
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleInputChange}
-          />
-          <br />
-          <label>Role:</label>
-          <select name="role" value={formData.role} onChange={handleInputChange}>
-            <option value="Employee">Employee</option>
-            <option value="Admin">Admin</option>
-          </select>
-          <br />
-          <button onClick={handleCreateUser}>Create User</button>
-        </div>
-      )}
+{showForm && user?.role === "admin" && (
+  <div>
+    <button onClick={() => setShowForm(false)}>Cancel</button>
+    <br />
+
+    <label>Name:</label>
+    <input
+      type="text"
+      name="name"
+      value={formData.name}
+      onChange={handleInputChange}
+    />
+    {validationErrors.name && <span style={{ color: "red", marginLeft: "10px" }}>{validationErrors.name}</span>}
+    <br />
+
+    <label>Email:</label>
+    <input
+      type="email"
+      name="email"
+      value={formData.email}
+      onChange={handleInputChange}
+    />
+    {validationErrors.email && <span style={{ color: "red", marginLeft: "10px" }}>{validationErrors.email}</span>}
+    <br />
+
+    <label>Password:</label>
+    <input
+      type="password"
+      name="password"
+      value={formData.password}
+      onChange={handleInputChange}
+    />
+    {validationErrors.password && <span style={{ color: "red", marginLeft: "10px" }}>{validationErrors.password}</span>}
+    <br />
+
+    <label>Role:</label>
+    <select name="role" value={formData.role} onChange={handleInputChange}>
+      <option value="Employee">Employee</option>
+      <option value="Admin">Admin</option>
+    </select>
+    <br />
+
+    <button onClick={handleCreateUser}>Create User</button>
+  </div>
+)}
+
 
       <ul>
         {users.map((user) => (

@@ -65,6 +65,7 @@ const Signup = () => {
   return (
     <div>
       <h2>Sign Up</h2>
+      <label >Name: </label>
       <input
         type="text"
         placeholder="Name"
@@ -73,6 +74,7 @@ const Signup = () => {
       />
       {errors.name && <p style={{ color: "red" }}>{errors.name}</p>}
 
+      <label >Email: </label>
       <input
         type="email"
         placeholder="Email"
@@ -81,8 +83,9 @@ const Signup = () => {
       />
       {errors.email && <p style={{ color: "red" }}>{errors.email}</p>}
 
-      <br />
+      
 
+      <label>Password: </label>
       <input
         type="password"
         placeholder="Password (min 6 characters)"

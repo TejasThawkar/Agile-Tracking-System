@@ -51,6 +51,7 @@ const Login = () => {
     <div>
       <h2>Login</h2>
       {error && <p style={{ color: "red" }}>{error}</p>}
+      <label >Email: </label>
       <input 
         type="email" 
         placeholder="Email" 
@@ -58,6 +59,7 @@ const Login = () => {
         onChange={(e) => setEmail(e.target.value)} 
       />
       <br />
+      <label>Password: </label>
       <input 
         type="password" 
         placeholder="Password" 
